@@ -2,6 +2,8 @@
 
 const Blackjack = require('./games/Blackjack');
 const Poker = require('./games/Poker');
+const Solitaire = require('./games/Solitaire');
+const FreeCell = require('./games/FreeCell');
 
 let _computerCounter = 0;
 const BOT_NAMES = ['Alice', 'Bob', 'Carol', 'Dave', 'Eve', 'Frank'];
@@ -59,8 +61,14 @@ class Room {
 
     if (this.selectedGame === 'blackjack') {
       this.game = new Blackjack(this.players, emitCb);
-    } else {
+    } else if (this.selectedGame === 'poker') {
       this.game = new Poker(this.players, emitCb);
+    } else if (this.selectedGame === 'solitaire') {
+      const humanPlayers = this.players.filter(p => !p.isComputer);
+      this.game = new Solitaire(humanPlayers, emitCb);
+    } else if (this.selectedGame === 'freecell') {
+      const humanPlayers = this.players.filter(p => !p.isComputer);
+      this.game = new FreeCell(humanPlayers, emitCb);
     }
 
     this.game.start();

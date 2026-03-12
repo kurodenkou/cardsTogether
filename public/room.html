@@ -46,6 +46,16 @@
               <strong>Texas Hold'em</strong>
               <p>2–8 players &bull; Best hand wins</p>
             </div>
+            <div class="game-option" data-game="solitaire">
+              <div class="game-option-icon">&#9827;</div>
+              <strong>Solitaire</strong>
+              <p>1 player &bull; Build foundations A→K</p>
+            </div>
+            <div class="game-option" data-game="freecell">
+              <div class="game-option-icon">&#9829;</div>
+              <strong>FreeCell</strong>
+              <p>1 player &bull; All cards face-up</p>
+            </div>
           </div>
           <div id="start-area" class="hidden">
             <button id="btn-start" class="btn btn-primary btn-large">Start Game</button>
@@ -123,6 +133,69 @@
             <button id="btn-poker-lobby" class="btn btn-secondary">Return to Lobby</button>
           </div>
           <div id="poker-waiting-next" class="hidden hint">Waiting for organizer to continue…</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ====== SOLITAIRE VIEW ====== -->
+    <section id="view-solitaire" class="view">
+      <div class="sol-table">
+        <div class="sol-message" id="sol-message"></div>
+
+        <div class="sol-top-row">
+          <div class="sol-stock-area">
+            <div class="sol-pile-slot" id="sol-stock" title="Draw from stock">
+              <div class="sol-pile-label">Stock</div>
+            </div>
+            <div class="sol-pile-slot" id="sol-waste" title="Waste pile">
+              <div class="sol-pile-label">Waste</div>
+            </div>
+          </div>
+          <div class="sol-spacer"></div>
+          <div class="sol-foundations" id="sol-foundations">
+            <div class="sol-foundation-slot" data-suit="♠" id="sol-found-spade" title="Spades foundation">♠</div>
+            <div class="sol-foundation-slot" data-suit="♥" id="sol-found-heart" title="Hearts foundation">♥</div>
+            <div class="sol-foundation-slot" data-suit="♦" id="sol-found-diamond" title="Diamonds foundation">♦</div>
+            <div class="sol-foundation-slot" data-suit="♣" id="sol-found-club" title="Clubs foundation">♣</div>
+          </div>
+        </div>
+
+        <div class="sol-tableau" id="sol-tableau"></div>
+
+        <div class="sol-footer">
+          <span id="sol-moves" class="sol-move-count">Moves: 0</span>
+          <button id="btn-sol-new" class="btn btn-secondary">New Game</button>
+          <button id="btn-sol-lobby" class="btn btn-secondary">Return to Lobby</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ====== FREECELL VIEW ====== -->
+    <section id="view-freecell" class="view">
+      <div class="fc-table">
+        <div class="fc-message" id="fc-message"></div>
+
+        <div class="fc-top-row">
+          <div class="fc-freecells" id="fc-freecells">
+            <div class="fc-cell-slot" data-cell="0" title="Free cell 1"></div>
+            <div class="fc-cell-slot" data-cell="1" title="Free cell 2"></div>
+            <div class="fc-cell-slot" data-cell="2" title="Free cell 3"></div>
+            <div class="fc-cell-slot" data-cell="3" title="Free cell 4"></div>
+          </div>
+          <div class="fc-home-cells" id="fc-home">
+            <div class="fc-home-slot" data-suit="♠" title="Spades home">♠</div>
+            <div class="fc-home-slot" data-suit="♥" title="Hearts home">♥</div>
+            <div class="fc-home-slot" data-suit="♦" title="Diamonds home">♦</div>
+            <div class="fc-home-slot" data-suit="♣" title="Clubs home">♣</div>
+          </div>
+        </div>
+
+        <div class="fc-cascades" id="fc-cascades"></div>
+
+        <div class="fc-footer">
+          <span id="fc-moves" class="fc-move-count">Moves: 0</span>
+          <button id="btn-fc-new" class="btn btn-secondary">New Game</button>
+          <button id="btn-fc-lobby" class="btn btn-secondary">Return to Lobby</button>
         </div>
       </div>
     </section>
