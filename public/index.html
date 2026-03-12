@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cards Together</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body class="lobby-page">
+  <div class="lobby-container">
+    <h1 class="logo">&#9829; Cards Together</h1>
+    <p class="tagline">Play Blackjack &amp; Poker with friends</p>
+
+    <div class="card-panel">
+      <div class="input-group">
+        <label for="player-name">Your Name</label>
+        <input id="player-name" type="text" maxlength="20" placeholder="Enter your name" autofocus>
+      </div>
+
+      <div class="tabs">
+        <button class="tab-btn active" data-tab="create">Create Room</button>
+        <button class="tab-btn" data-tab="join">Join Room</button>
+      </div>
+
+      <div id="tab-create" class="tab-content active">
+        <p class="hint">Create a room and invite your friends.</p>
+        <button id="btn-create" class="btn btn-primary btn-large">Create Room</button>
+      </div>
+
+      <div id="tab-join" class="tab-content">
+        <div class="input-group">
+          <label for="room-code">Room Code</label>
+          <input id="room-code" type="text" maxlength="6" placeholder="XXXXXX" class="code-input">
+        </div>
+        <button id="btn-join" class="btn btn-primary btn-large">Join Room</button>
+      </div>
+
+      <div id="lobby-error" class="error-msg hidden"></div>
+    </div>
+
+    <div class="game-previews">
+      <div class="game-preview">
+        <div class="preview-icon">&#9824;</div>
+        <strong>Blackjack</strong>
+        <span>Beat the dealer to 21</span>
+      </div>
+      <div class="game-preview">
+        <div class="preview-icon">&#9830;</div>
+        <strong>Texas Hold'em</strong>
+        <span>Best hand wins the pot</span>
+      </div>
+    </div>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="/js/lobby.js"></script>
+</body>
+</html>

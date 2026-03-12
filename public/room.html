@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cards Together — Room</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body class="room-page">
+
+  <!-- Top bar -->
+  <header class="room-header">
+    <a href="/" class="logo-small">&#9829; Cards Together</a>
+    <div class="room-info">
+      <span class="room-label">Room:</span>
+      <span id="room-id" class="room-code-display">------</span>
+      <button id="btn-copy-code" class="btn btn-small" title="Copy room code">Copy</button>
+    </div>
+    <div id="player-badge" class="player-badge"></div>
+  </header>
+
+  <!-- Main area -->
+  <main id="main-area">
+
+    <!-- ====== LOBBY VIEW ====== -->
+    <section id="view-lobby" class="view">
+      <div class="lobby-split">
+        <div class="player-list-panel">
+          <h2>Players <span id="player-count">(0)</span></h2>
+          <ul id="player-list"></ul>
+          <div id="organizer-controls" class="hidden">
+            <button id="btn-add-bot" class="btn btn-secondary">+ Add Computer Player</button>
+          </div>
+        </div>
+
+        <div class="game-select-panel">
+          <h2>Select Game</h2>
+          <div class="game-options">
+            <div class="game-option" data-game="blackjack">
+              <div class="game-option-icon">&#9824;</div>
+              <strong>Blackjack</strong>
+              <p>2–8 players &bull; Beat the dealer</p>
+            </div>
+            <div class="game-option" data-game="poker">
+              <div class="game-option-icon">&#9830;</div>
+              <strong>Texas Hold'em</strong>
+              <p>2–8 players &bull; Best hand wins</p>
+            </div>
+          </div>
+          <div id="start-area" class="hidden">
+            <button id="btn-start" class="btn btn-primary btn-large">Start Game</button>
+          </div>
+          <div id="waiting-msg" class="hint hidden">Waiting for the organizer to start the game…</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ====== BLACKJACK VIEW ====== -->
+    <section id="view-blackjack" class="view">
+      <div class="bj-table">
+        <div class="bj-message" id="bj-message"></div>
+
+        <div class="bj-dealer-area">
+          <div class="dealer-label">Dealer</div>
+          <div id="bj-dealer-hand" class="card-row"></div>
+          <div id="bj-dealer-value" class="hand-value"></div>
+        </div>
+
+        <div id="bj-players-area" class="bj-players-area"></div>
+
+        <div id="bj-actions" class="action-bar hidden">
+          <div class="bet-control hidden" id="bj-bet-control">
+            <label>Bet: <input id="bj-bet-amount" type="number" min="10" step="10" value="50"> chips</label>
+            <button class="btn btn-primary" id="btn-bj-bet">Place Bet</button>
+          </div>
+          <div class="play-actions hidden" id="bj-play-actions">
+            <button class="btn btn-action" id="btn-bj-hit">Hit</button>
+            <button class="btn btn-action" id="btn-bj-stand">Stand</button>
+            <button class="btn btn-action btn-double hidden" id="btn-bj-double">Double Down</button>
+          </div>
+        </div>
+
+        <div id="bj-round-over" class="round-over hidden">
+          <div id="bj-organizer-next" class="hidden">
+            <button id="btn-bj-next" class="btn btn-primary">Next Round</button>
+            <button id="btn-bj-lobby" class="btn btn-secondary">Return to Lobby</button>
+          </div>
+          <div id="bj-waiting-next" class="hidden hint">Waiting for organizer to continue…</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ====== POKER VIEW ====== -->
+    <section id="view-poker" class="view">
+      <div class="poker-table">
+        <div class="poker-message" id="poker-message"></div>
+
+        <div class="poker-center">
+          <div class="poker-pot-area">
+            <span class="pot-label">Pot:</span>
+            <span id="poker-pot" class="pot-amount">0</span>
+          </div>
+          <div id="poker-community" class="card-row community-cards"></div>
+          <div id="poker-hand-name" class="hand-name-display"></div>
+        </div>
+
+        <div id="poker-players-area" class="poker-players-area"></div>
+
+        <div id="poker-actions" class="action-bar hidden">
+          <button class="btn btn-danger" id="btn-poker-fold">Fold</button>
+          <button class="btn btn-action" id="btn-poker-check-call">Check</button>
+          <div class="raise-group hidden" id="poker-raise-group">
+            <input id="poker-raise-amount" type="number" min="0" step="10">
+            <button class="btn btn-action" id="btn-poker-raise">Raise</button>
+          </div>
+          <button class="btn btn-warning" id="btn-poker-allin">All In</button>
+        </div>
+
+        <div id="poker-hand-over" class="round-over hidden">
+          <div id="poker-showdown-info"></div>
+          <div id="poker-organizer-next" class="hidden">
+            <button id="btn-poker-next" class="btn btn-primary">Next Hand</button>
+            <button id="btn-poker-lobby" class="btn btn-secondary">Return to Lobby</button>
+          </div>
+          <div id="poker-waiting-next" class="hidden hint">Waiting for organizer to continue…</div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <div id="room-error" class="error-toast hidden"></div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="/js/cards.js"></script>
+  <script src="/js/room.js"></script>
+</body>
+</html>
