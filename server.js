@@ -11,8 +11,9 @@ const server = http.createServer(app);
 const io = new Server(server);
 
 // In-memory state
-const rooms = new Map();      // roomId -> Room
-const socketRoom = new Map(); // socketId -> roomId
+const rooms = new Map();           // roomId -> Room
+const socketRoom = new Map();      // socketId -> roomId
+const disconnectTimers = new Map(); // socketId -> timeoutId (grace period for page nav)
 
 app.use(express.static(path.join(__dirname, 'public')));
 
@@ -184,6 +185,12 @@ io.on('connection', (socket) => {
       return socket.emit('error', { message: 'Session expired. Please rejoin from the lobby.' });
     }
 
+    // Cancel the pending disconnect cleanup
+    if (disconnectTimers.has(oldId)) {
+      clearTimeout(disconnectTimers.get(oldId));
+      disconnectTimers.delete(oldId);
+    }
+
     // Re-map the player to the new socket
     const oldSocketId = player.id;
     player.id = socket.id;
@@ -207,38 +214,43 @@ io.on('connection', (socket) => {
     emitRoomState(room);
   });
 
-  // Disconnect handling
+  // Disconnect handling — use a grace period so page navigation doesn't nuke the room
   socket.on('disconnect', () => {
     const roomId = socketRoom.get(socket.id);
     if (!roomId) return;
-    socketRoom.delete(socket.id);
 
     const room = rooms.get(roomId);
-    if (!room) return;
+    if (!room) { socketRoom.delete(socket.id); return; }
 
-    if (room.phase === 'lobby') {
-      room.removePlayer(socket.id);
-      const humans = room.players.filter(p => !p.isComputer);
-      if (humans.length === 0) {
-        rooms.delete(roomId);
-        return;
+    // Mark player as temporarily disconnected but don't remove yet
+    const p = room.players.find(x => x.id === socket.id);
+    if (p) p.disconnected = true;
+
+    // Give the client 10 seconds to reconnect (covers page navigation to /room)
+    const timerId = setTimeout(() => {
+      disconnectTimers.delete(socket.id);
+      socketRoom.delete(socket.id);
+
+      const r = rooms.get(roomId);
+      if (!r) return;
+
+      if (r.phase === 'lobby') {
+        r.removePlayer(socket.id);
+        const humans = r.players.filter(x => !x.isComputer);
+        if (humans.length === 0) { rooms.delete(roomId); return; }
+        if (r.organizerId === socket.id) r.organizerId = humans[0].id;
+        emitRoomState(r);
+      } else {
+        // Already marked disconnected above; just transfer organizer if needed
+        if (r.organizerId === socket.id) {
+          const next = r.players.find(x => !x.isComputer && !x.disconnected);
+          if (next) r.organizerId = next.id;
+        }
+        emitRoomState(r);
       }
-      // Transfer organizer if they left
-      if (room.organizerId === socket.id) {
-        room.organizerId = humans[0].id;
-      }
-      emitRoomState(room);
-    } else {
-      // Mark disconnected during game
-      const p = room.players.find(x => x.id === socket.id);
-      if (p) p.disconnected = true;
-      // Optionally: transfer organizer title
-      if (room.organizerId === socket.id) {
-        const nextHuman = room.players.find(x => !x.isComputer && !x.disconnected);
-        if (nextHuman) room.organizerId = nextHuman.id;
-      }
-      emitRoomState(room);
-    }
+    }, 10000);
+
+    disconnectTimers.set(socket.id, timerId);
   });
 });
 
