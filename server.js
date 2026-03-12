@@ -80,7 +80,16 @@ io.on('connection', (socket) => {
     socketRoom.set(socket.id, id);
     socket.join(id);
 
-    emitRoomState(room);
+    // Send room_joined to the new player (triggers redirect in lobby.js)
+    socket.emit('room_joined', room.getStateFor(socket.id));
+    // Update existing players
+    socket.to(id).emit('room_state', room.getStateFor(room.organizerId));
+    // Emit tailored state to all other human players
+    for (const player of room.players) {
+      if (player.isComputer || player.id === socket.id) continue;
+      const sock = io.sockets.sockets.get(player.id);
+      if (sock) sock.emit('room_state', room.getStateFor(player.id));
+    }
   });
 
   // Select game type (organizer only)
