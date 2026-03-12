@@ -57,6 +57,9 @@ body {
 
 .hidden { display: none !important; }
 
+.view { display: none; }
+.view.active { display: block; }
+
 /* ============================================================
    LOBBY PAGE
    ============================================================ */
