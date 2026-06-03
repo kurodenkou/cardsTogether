@@ -98,7 +98,7 @@ io.on('connection', (socket) => {
     const room = rooms.get(socketRoom.get(socket.id));
     if (!room || room.organizerId !== socket.id) return;
     if (room.phase !== 'lobby') return;
-    if (!['blackjack', 'poker'].includes(gameType)) return;
+    if (!['blackjack', 'poker', 'solitaire', 'freecell'].includes(gameType)) return;
 
     room.selectedGame = gameType;
     emitRoomState(room);
@@ -141,7 +141,10 @@ io.on('connection', (socket) => {
     if (!room || room.organizerId !== socket.id) return;
     if (room.phase !== 'lobby') return;
     if (!room.selectedGame) return socket.emit('error', { message: 'Select a game first.' });
-    if (room.players.length < 2) return socket.emit('error', { message: 'Need at least 2 players.' });
+    const isSinglePlayer = ['solitaire', 'freecell'].includes(room.selectedGame);
+    if (!isSinglePlayer && room.players.length < 2) {
+      return socket.emit('error', { message: 'Need at least 2 players.' });
+    }
 
     room.startGame();
     // onStateChange handles the initial emit

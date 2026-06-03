@@ -710,13 +710,254 @@ body {
 }
 
 /* ============================================================
+   SOLITAIRE VIEW
+   ============================================================ */
+.sol-table {
+  max-width: 720px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.sol-message {
+  text-align: center;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--gold-light);
+  min-height: 1.5em;
+  padding: 6px;
+}
+
+.sol-message.sol-won {
+  font-size: 1.4rem;
+  color: #7dffa8;
+  text-shadow: 0 0 16px rgba(39,174,96,0.8);
+}
+
+.sol-top-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.sol-stock-area {
+  display: flex;
+  gap: 10px;
+}
+
+.sol-spacer {
+  flex: 1;
+}
+
+.sol-foundations {
+  display: flex;
+  gap: 10px;
+}
+
+/* Pile slot containers */
+.sol-pile-slot,
+.sol-foundation-slot,
+.fc-cell-slot,
+.fc-home-slot {
+  width: 64px;
+  height: 90px;
+  border-radius: 8px;
+  border: 2px dashed rgba(255,255,255,0.18);
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.6rem;
+  color: rgba(255,255,255,0.18);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.sol-pile-slot:hover,
+.sol-foundation-slot:hover,
+.fc-cell-slot:hover,
+.fc-home-slot:hover {
+  border-color: rgba(255,255,255,0.3);
+}
+
+.sol-foundation-slot.red-suit,
+.fc-home-slot.red-suit {
+  color: rgba(204,34,0,0.35);
+  border-color: rgba(204,34,0,0.25);
+}
+
+.sol-pile-label {
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: rgba(255,255,255,0.3);
+  position: absolute;
+  bottom: 6px;
+  left: 0;
+  right: 0;
+  text-align: center;
+}
+
+/* Empty pile placeholder inside slots */
+.sol-pile-empty {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  color: rgba(255,255,255,0.3);
+  cursor: pointer;
+  border-radius: 6px;
+}
+
+.sol-col-empty {
+  width: 64px;
+  height: 90px;
+  border-radius: 8px;
+  border: 2px dashed rgba(255,255,255,0.18);
+  cursor: pointer;
+}
+
+/* Tableau */
+.sol-tableau {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  overflow-x: auto;
+  padding-bottom: 8px;
+}
+
+.sol-col {
+  display: flex;
+  flex-direction: column;
+  min-width: 64px;
+  flex-shrink: 0;
+}
+
+/* Interactive solitaire cards */
+.sol-card {
+  cursor: pointer;
+  transition: box-shadow 0.1s;
+}
+
+.sol-card:hover:not(.card-back) {
+  box-shadow: 0 0 10px rgba(255,255,255,0.3);
+}
+
+.playing-card.sol-selected,
+.playing-card.fc-selected {
+  outline: 3px solid var(--gold);
+  outline-offset: 1px;
+  box-shadow: 0 0 14px rgba(212,160,23,0.65) !important;
+  z-index: 100 !important;
+}
+
+/* Solitaire footer */
+.sol-footer,
+.fc-footer {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 0;
+}
+
+.sol-move-count,
+.fc-move-count {
+  color: rgba(255,255,255,0.55);
+  font-size: 0.88rem;
+  flex: 1;
+}
+
+/* ============================================================
+   FREECELL VIEW
+   ============================================================ */
+.fc-table {
+  max-width: 820px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.fc-message {
+  text-align: center;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--gold-light);
+  min-height: 1.5em;
+  padding: 6px;
+}
+
+.fc-message.fc-won {
+  font-size: 1.4rem;
+  color: #7dffa8;
+  text-shadow: 0 0 16px rgba(39,174,96,0.8);
+}
+
+.fc-top-row {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.fc-freecells,
+.fc-home-cells {
+  display: flex;
+  gap: 10px;
+}
+
+.fc-home-cells {
+  margin-left: auto;
+}
+
+/* FreeCell cascades */
+.fc-cascades {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  overflow-x: auto;
+  padding-bottom: 8px;
+}
+
+.fc-cascade {
+  display: flex;
+  flex-direction: column;
+  min-width: 64px;
+  flex-shrink: 0;
+  min-height: 90px;
+}
+
+.fc-pile-empty {
+  width: 64px;
+  height: 90px;
+  border-radius: 8px;
+  border: 2px dashed rgba(255,255,255,0.18);
+  cursor: pointer;
+}
+
+.fc-card {
+  cursor: pointer;
+  transition: box-shadow 0.1s;
+}
+
+.fc-card:hover {
+  box-shadow: 0 0 10px rgba(255,255,255,0.3);
+}
+
+/* ============================================================
    RESPONSIVE
    ============================================================ */
 @media (max-width: 650px) {
   .lobby-split { grid-template-columns: 1fr; }
-  .game-options { grid-template-columns: 1fr; }
+  .game-options { grid-template-columns: 1fr 1fr; }
   .bj-players-area { grid-template-columns: 1fr 1fr; }
   .poker-players-area { grid-template-columns: 1fr 1fr; }
   .playing-card { width: 52px; height: 74px; font-size: 0.75rem; }
   .card-center { font-size: 1.1rem; }
+  .sol-pile-slot, .sol-foundation-slot, .fc-cell-slot, .fc-home-slot { width: 52px; height: 74px; }
+  .sol-col-empty, .fc-pile-empty { width: 52px; height: 74px; }
+  .sol-col { min-width: 52px; }
+  .fc-cascade { min-width: 52px; }
 }
