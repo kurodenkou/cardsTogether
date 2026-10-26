@@ -1,0 +1,130 @@
+# Cards Together on OpenShift (single-node / SNO friendly).
+#
+# Build and deploy from a local checkout, no GitHub access needed:
+#   oc new-project cards-together
+#   oc apply -f openshift/cards-together.yaml
+#   oc start-build cards-together --from-dir=. --follow
+#
+# The Deployment rolls out automatically whenever a new image lands in the
+# ImageStream. Get the URL with: oc get route cards-together
+---
+apiVersion: image.openshift.io/v1
+kind: ImageStream
+metadata:
+  name: cards-together
+  labels:
+    app: cards-together
+---
+apiVersion: build.openshift.io/v1
+kind: BuildConfig
+metadata:
+  name: cards-together
+  labels:
+    app: cards-together
+spec:
+  # Binary source: `oc start-build --from-dir=.` uploads the local directory.
+  source:
+    type: Binary
+  strategy:
+    type: Docker
+    dockerStrategy:
+      dockerfilePath: Dockerfile
+  output:
+    to:
+      kind: ImageStreamTag
+      name: cards-together:latest
+  resources:
+    limits:
+      memory: 1Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cards-together
+  labels:
+    app: cards-together
+  annotations:
+    # Resolve the ImageStream tag and redeploy when a new build is pushed.
+    image.openshift.io/triggers: >-
+      [{"from":{"kind":"ImageStreamTag","name":"cards-together:latest"},"fieldPath":"spec.template.spec.containers[?(@.name==\"cards-together\")].image"}]
+spec:
+  # Game rooms are kept in memory, so run exactly one pod and replace it
+  # (rather than running two side by side) on rollout.
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: cards-together
+  template:
+    metadata:
+      labels:
+        app: cards-together
+    spec:
+      containers:
+        - name: cards-together
+          image: cards-together:latest
+          ports:
+            - name: http
+              containerPort: 8080
+          env:
+            - name: PORT
+              value: "8080"
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 2
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 20
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              memory: 256Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsNonRoot: true
+            capabilities:
+              drop: ["ALL"]
+            seccompProfile:
+              type: RuntimeDefault
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cards-together
+  labels:
+    app: cards-together
+spec:
+  selector:
+    app: cards-together
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http
+---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: cards-together
+  labels:
+    app: cards-together
+  annotations:
+    # Keep idle Socket.IO websocket connections open past the 30s default.
+    haproxy.router.openshift.io/timeout: 1h
+spec:
+  to:
+    kind: Service
+    name: cards-together
+  port:
+    targetPort: http
+  tls:
+    termination: edge
+    insecureEdgeTerminationPolicy: Redirect
