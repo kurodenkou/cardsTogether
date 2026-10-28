@@ -98,7 +98,7 @@ io.on('connection', (socket) => {
     const room = rooms.get(socketRoom.get(socket.id));
     if (!room || room.organizerId !== socket.id) return;
     if (room.phase !== 'lobby') return;
-    if (!['blackjack', 'poker', 'solitaire', 'freecell'].includes(gameType)) return;
+    if (!['blackjack', 'poker', 'solitaire', 'freecell', 'hearts', 'spades', 'crazyeights'].includes(gameType)) return;
 
     room.selectedGame = gameType;
     emitRoomState(room);
@@ -142,7 +142,11 @@ io.on('connection', (socket) => {
     if (room.phase !== 'lobby') return;
     if (!room.selectedGame) return socket.emit('error', { message: 'Select a game first.' });
     const isSinglePlayer = ['solitaire', 'freecell'].includes(room.selectedGame);
-    if (!isSinglePlayer && room.players.length < 2) {
+    const isFourPlayer = Room.FOUR_PLAYER_GAMES.includes(room.selectedGame);
+    if (isFourPlayer && room.players.length > 4) {
+      return socket.emit('error', { message: 'This game is for exactly 4 players — remove some players first.' });
+    }
+    if (!isSinglePlayer && !isFourPlayer && room.players.length < 2) {
       return socket.emit('error', { message: 'Need at least 2 players.' });
     }
 

@@ -4,6 +4,12 @@ const Blackjack = require('./games/Blackjack');
 const Poker = require('./games/Poker');
 const Solitaire = require('./games/Solitaire');
 const FreeCell = require('./games/FreeCell');
+const Hearts = require('./games/Hearts');
+const Spades = require('./games/Spades');
+const CrazyEights = require('./games/CrazyEights');
+
+// Games that need exactly four seats; empty seats are filled with bots
+const FOUR_PLAYER_GAMES = ['hearts', 'spades'];
 
 let _computerCounter = 0;
 const BOT_NAMES = ['Alice', 'Bob', 'Carol', 'Dave', 'Eve', 'Frank'];
@@ -69,6 +75,12 @@ class Room {
     } else if (this.selectedGame === 'freecell') {
       const humanPlayers = this.players.filter(p => !p.isComputer);
       this.game = new FreeCell(humanPlayers, emitCb);
+    } else if (FOUR_PLAYER_GAMES.includes(this.selectedGame)) {
+      while (this.players.length < 4) this.addComputerPlayer();
+      const GameClass = this.selectedGame === 'hearts' ? Hearts : Spades;
+      this.game = new GameClass(this.players, emitCb);
+    } else if (this.selectedGame === 'crazyeights') {
+      this.game = new CrazyEights(this.players, emitCb);
     }
 
     this.game.start();
@@ -84,6 +96,7 @@ class Room {
   }
 
   returnToLobby() {
+    if (this.game && this.game._clearTimer) this.game._clearTimer();
     this.phase = 'lobby';
     this.game = null;
     // Sync chip counts back from game players if needed
@@ -113,5 +126,7 @@ class Room {
     return base;
   }
 }
+
+Room.FOUR_PLAYER_GAMES = FOUR_PLAYER_GAMES;
 
 module.exports = Room;

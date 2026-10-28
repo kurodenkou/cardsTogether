@@ -947,6 +947,188 @@ body {
 }
 
 /* ============================================================
+   HAND FAN (shared by Hearts / Spades / Crazy Eights)
+   ============================================================ */
+.red-icon { color: #ff5a3c; }
+
+.hand-fan {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  row-gap: 10px;
+  padding: 18px 8px 8px 36px;
+  min-height: 120px;
+}
+.hand-fan .playing-card {
+  margin-left: -28px;
+  transition: transform 0.12s, box-shadow 0.12s, opacity 0.12s;
+}
+.hand-fan .playing-card.is-playable { cursor: pointer; }
+.hand-fan .playing-card.is-playable:hover { transform: translateY(-10px); z-index: 50; }
+.hand-fan .playing-card.is-disabled { filter: brightness(0.55) grayscale(0.3); }
+.hand-fan .playing-card.is-raised {
+  transform: translateY(-16px);
+  outline: 3px solid var(--gold);
+  outline-offset: 1px;
+}
+.hand-fan .playing-card.is-received { box-shadow: 0 0 0 3px rgba(52,152,219,0.8), var(--card-shadow); }
+
+/* ============================================================
+   HEARTS / SPADES VIEW
+   ============================================================ */
+.tt-table {
+  max-width: 860px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.tt-message, .c8-message {
+  text-align: center;
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: var(--gold-light);
+  min-height: 1.5em;
+  padding: 4px;
+}
+.tt-scoreboard {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  align-items: center;
+}
+.tt-score-item {
+  background: var(--panel-bg);
+  border: 1px solid var(--panel-border);
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-size: 0.85rem;
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+}
+.tt-score-item strong { color: var(--gold); }
+.tt-score-item em, .tt-score-note { font-size: 0.75rem; color: rgba(255,255,255,0.5); font-style: normal; }
+
+.tt-board {
+  display: grid;
+  grid-template-columns: 1fr minmax(240px, 300px) 1fr;
+  grid-template-areas:
+    ".    top    ."
+    "left center right"
+    ".    bottom .";
+  gap: 10px;
+  align-items: center;
+}
+.tt-seat-top { grid-area: top; }
+.tt-seat-left { grid-area: left; }
+.tt-seat-right { grid-area: right; }
+.tt-seat-bottom { grid-area: bottom; }
+
+.tt-seat, .c8-player {
+  background: var(--panel-bg);
+  border: 2px solid rgba(255,255,255,0.08);
+  border-radius: var(--radius);
+  padding: 8px 12px;
+  text-align: center;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.tt-seat.is-me, .c8-player.is-me { border-color: rgba(52,152,219,0.5); }
+.tt-seat.is-current, .c8-player.is-current {
+  border-color: var(--gold);
+  box-shadow: 0 0 12px rgba(212,160,23,0.4);
+}
+.tt-seat-name { font-weight: 700; font-size: 0.9rem; }
+.tt-seat-detail { font-size: 0.78rem; color: rgba(255,255,255,0.6); margin-top: 2px; }
+
+.tt-center {
+  grid-area: center;
+  position: relative;
+  height: 240px;
+  background: rgba(0,0,0,0.18);
+  border-radius: 50%;
+  border: 1px solid rgba(255,255,255,0.06);
+}
+.tt-slot { position: absolute; }
+.tt-slot-top { top: 8px; left: 50%; transform: translateX(-50%); }
+.tt-slot-bottom { bottom: 8px; left: 50%; transform: translateX(-50%); }
+.tt-slot-left { left: 14px; top: 50%; transform: translateY(-50%); }
+.tt-slot-right { right: 14px; top: 50%; transform: translateY(-50%); }
+.tt-center-info {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 0 90px;
+  font-size: 0.8rem;
+  color: rgba(255,255,255,0.55);
+  pointer-events: none;
+}
+
+.tt-bid-controls { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; justify-content: center; }
+
+.tt-results-table {
+  border-collapse: collapse;
+  margin: 0 auto 12px;
+  font-size: 0.88rem;
+}
+.tt-results-table th, .tt-results-table td {
+  padding: 6px 12px;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+  text-align: center;
+}
+.tt-results-table th { color: rgba(255,255,255,0.55); font-weight: 600; }
+.tt-results-table em { font-size: 0.75rem; color: rgba(255,255,255,0.5); }
+
+/* ============================================================
+   CRAZY EIGHTS VIEW
+   ============================================================ */
+.c8-table {
+  max-width: 860px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.c8-players {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 10px;
+}
+.c8-center {
+  background: var(--panel-bg);
+  border: 1px solid var(--panel-border);
+  border-radius: var(--radius);
+  padding: 20px;
+  display: flex;
+  gap: 24px;
+  align-items: center;
+  justify-content: center;
+}
+.c8-pile { position: relative; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.c8-pile-label { position: static; }
+.c8-suit { font-size: 1.1rem; font-weight: 700; }
+.c8-suit span { font-size: 1.6rem; }
+.c8-suit-btn { font-size: 1.3rem; padding: 4px 14px; }
+
+@media (max-width: 650px) {
+  .tt-board {
+    grid-template-columns: 1fr 1fr;
+    grid-template-areas:
+      "top top"
+      "left right"
+      "center center"
+      "bottom bottom";
+  }
+  .tt-center { height: 200px; border-radius: 20px; }
+  .tt-center-info { padding: 0 70px; }
+  .hand-fan .playing-card { margin-left: -22px; }
+}
+
+/* ============================================================
    RESPONSIVE
    ============================================================ */
 @media (max-width: 650px) {
