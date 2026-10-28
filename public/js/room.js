@@ -41,6 +41,7 @@ const gameOptions = document.querySelectorAll('.game-option');
 const startArea = document.getElementById('start-area');
 const btnStart = document.getElementById('btn-start');
 const waitingMsg = document.getElementById('waiting-msg');
+const gameHintEl = document.getElementById('game-hint');
 
 // Blackjack
 const bjMessageEl = document.getElementById('bj-message');
@@ -104,7 +105,7 @@ const errorToast = document.getElementById('room-error');
 
 // ---- Utility ----
 function showView(name) {
-  for (const v of [viewLobby, viewBJ, viewPoker, viewSolitaire, viewFreeCell]) {
+  for (const v of document.querySelectorAll('#main-area > .view')) {
     v.classList.remove('active');
   }
   if (name === 'lobby') viewLobby.classList.add('active');
@@ -112,6 +113,8 @@ function showView(name) {
   else if (name === 'poker') viewPoker.classList.add('active');
   else if (name === 'solitaire') viewSolitaire.classList.add('active');
   else if (name === 'freecell') viewFreeCell.classList.add('active');
+  else if (name === 'tricks') viewTricks.classList.add('active');
+  else if (name === 'crazyeights') viewCrazyEights.classList.add('active');
 }
 
 function showError(msg) {
@@ -184,6 +187,18 @@ function renderLobby(state) {
     startArea.classList.add('hidden');
     waitingMsg.classList.remove('hidden');
   }
+
+  const isFourPlayer = ['hearts', 'spades'].includes(selectedGame);
+  if (isFourPlayer) {
+    gameHintEl.textContent = players.length > 4
+      ? 'This game needs exactly 4 players — remove some to start.'
+      : players.length < 4
+        ? `Exactly 4 players — ${4 - players.length} empty seat${players.length === 3 ? '' : 's'} will be filled by bots.`
+        : '';
+  } else {
+    gameHintEl.textContent = '';
+  }
+  gameHintEl.classList.toggle('hidden', !gameHintEl.textContent);
 
   gameOptions.forEach(opt => {
     opt.classList.toggle('selected', opt.dataset.game === selectedGame);
@@ -569,6 +584,12 @@ function render(state) {
     } else if (gs.game === 'freecell') {
       showView('freecell');
       renderFreeCell(gs);
+    } else if (gs.game === 'hearts' || gs.game === 'spades') {
+      showView('tricks');
+      renderTricks(gs);
+    } else if (gs.game === 'crazyeights') {
+      showView('crazyeights');
+      renderCrazyEights(gs);
     }
   }
 }
@@ -911,6 +932,292 @@ btnFcLobby.addEventListener('click', () => {
   fcSelected = null;
   socket.emit('return_to_lobby');
 });
+
+// ============================================================
+// HEARTS / SPADES RENDERING (shared trick-taking table)
+// ============================================================
+const viewTricks = document.getElementById('view-tricks');
+const ttMessageEl = document.getElementById('tt-message');
+const ttScoreboardEl = document.getElementById('tt-scoreboard');
+const ttCenterInfoEl = document.getElementById('tt-center-info');
+const ttActionsEl = document.getElementById('tt-actions');
+const ttPassControlsEl = document.getElementById('tt-pass-controls');
+const btnTtPass = document.getElementById('btn-tt-pass');
+const ttBidControlsEl = document.getElementById('tt-bid-controls');
+const ttHandEl = document.getElementById('tt-hand');
+const ttHandOverEl = document.getElementById('tt-hand-over');
+const ttResultsEl = document.getElementById('tt-results');
+const ttOrganizerNextEl = document.getElementById('tt-organizer-next');
+const ttWaitingNextEl = document.getElementById('tt-waiting-next');
+const btnTtNext = document.getElementById('btn-tt-next');
+const btnTtLobby = document.getElementById('btn-tt-lobby');
+
+let ttPassSelection = []; // [{ suit, rank }] chosen for the Hearts pass
+let ttLastState = null;
+
+const cardKey = c => `${c.rank}${c.suit}`;
+
+function _handCardHtml(card, extraClass) {
+  const colorClass = card.isRed ? 'red' : 'black';
+  return `<div class="playing-card ${colorClass} ${extraClass}" data-card="${esc(cardKey(card))}">
+    <div class="card-top">${card.rank}<br>${card.suit}</div>
+    <div class="card-center">${card.suit}</div>
+    <div class="card-bottom">${card.rank}<br>${card.suit}</div>
+  </div>`;
+}
+
+function renderTricks(gs) {
+  ttLastState = gs;
+  const isHearts = gs.game === 'hearts';
+  const myActions = gs.myActions || [];
+  ttMessageEl.textContent = gs.message || '';
+
+  // Scoreboard
+  if (isHearts) {
+    ttScoreboardEl.innerHTML = gs.seats.map((s, i) =>
+      `<div class="tt-score-item"><span>${esc(s.name)}</span><strong>${gs.seatScores[i].score}</strong></div>`
+    ).join('') + `<div class="tt-score-note">Hand ${gs.handNumber} · first to 100 loses</div>`;
+  } else {
+    ttScoreboardEl.innerHTML = gs.teams.map(t =>
+      `<div class="tt-score-item"><span>${esc(t.name)}</span><strong>${t.score}</strong>
+        <em>bid ${t.bid} · won ${t.tricks} · bags ${t.bags}</em></div>`
+    ).join('') + `<div class="tt-score-note">Hand ${gs.handNumber} · first to 500 wins</div>`;
+  }
+
+  // Seats, positioned relative to me (0 = me at bottom, 1 = left, 2 = across, 3 = right)
+  const rel = seat => (seat - gs.mySeat + 4) % 4;
+  gs.seats.forEach((s, seat) => {
+    const el = document.getElementById(`tt-seat-${rel(seat)}`);
+    let detail = `${s.cardCount} cards · ${s.tricks} tricks`;
+    if (isHearts) {
+      detail += ` · ${gs.seatScores[seat].handPoints} pts`;
+    } else {
+      const bid = gs.bids[seat];
+      detail += ` · bid ${bid === null ? '—' : bid === 0 ? 'Nil' : bid}`;
+    }
+    let badges = '';
+    if (!isHearts && seat === gs.dealerSeat) badges += '<span class="badge badge-dealer">D</span>';
+    if (!isHearts && seat % 2 === gs.mySeat % 2 && seat !== gs.mySeat) badges += '<span class="badge badge-bb">Partner</span>';
+    if (isHearts && gs.phase === 'passing' && gs.passedSeats[seat]) badges += '<span class="badge badge-bb">Passed</span>';
+    el.className = `tt-seat tt-seat-${['bottom', 'left', 'top', 'right'][rel(seat)]}` +
+      (seat === gs.turnSeat ? ' is-current' : '') + (s.isMe ? ' is-me' : '');
+    el.innerHTML = `<div class="tt-seat-name">${esc(s.name)}${s.isMe ? ' (You)' : ''}${s.isComputer ? ' 🤖' : ''} ${badges}</div>
+      <div class="tt-seat-detail">${detail}</div>`;
+  });
+
+  // Trick in the centre
+  document.querySelectorAll('#tt-center .tt-slot').forEach(slot => { slot.innerHTML = ''; });
+  for (const t of gs.trick) {
+    const slot = document.querySelector(`#tt-center .tt-slot[data-rel="${rel(t.seat)}"]`);
+    slot.innerHTML = renderCard(t.card);
+  }
+  let info = '';
+  if (gs.phase === 'passing') info = gs.iHavePassed ? 'Waiting for others to pass…' : `Pass 3 cards ${gs.passDir}`;
+  else if (gs.phase === 'passed') info = `Received: ${gs.received.map(c => c.rank + c.suit).join(' ')}`;
+  else if (gs.phase === 'bidding') info = 'Bidding';
+  else if (isHearts && gs.heartsBroken && gs.trick.length === 0) info = 'Hearts broken ♥';
+  else if (!isHearts && gs.spadesBroken && gs.trick.length === 0) info = 'Spades broken ♠';
+  ttCenterInfoEl.textContent = info;
+
+  // My hand
+  const canPass = myActions.includes('pass');
+  const canPlay = myActions.includes('play');
+  if (!canPass) ttPassSelection = [];
+  ttPassSelection = ttPassSelection.filter(sel => gs.myHand.some(c => cardKey(c) === cardKey(sel)));
+  const receivedKeys = (gs.phase === 'passed' || (gs.phase === 'playing' && gs.trick.length === 0 && gs.lastTrick === null))
+    ? (gs.received || []).map(cardKey) : [];
+
+  ttHandEl.innerHTML = gs.myHand.map(c => {
+    let cls = 'hand-card';
+    if (canPlay) cls += c.playable ? ' is-playable' : ' is-disabled';
+    if (canPass) {
+      cls += ' is-playable';
+      if (ttPassSelection.some(sel => cardKey(sel) === cardKey(c))) cls += ' is-raised';
+    }
+    if (receivedKeys.includes(cardKey(c))) cls += ' is-received';
+    return _handCardHtml(c, cls);
+  }).join('');
+
+  // Actions
+  ttPassControlsEl.classList.toggle('hidden', !canPass);
+  btnTtPass.disabled = ttPassSelection.length !== 3;
+  btnTtPass.textContent = `Pass ${ttPassSelection.length}/3 Cards ${gs.passDir || ''}`;
+
+  const canBid = myActions.includes('bid');
+  ttBidControlsEl.classList.toggle('hidden', !canBid);
+  if (canBid && !ttBidControlsEl.childElementCount) {
+    let html = '<span>Your bid:</span>';
+    for (let b = 0; b <= 13; b++) {
+      html += `<button class="btn btn-secondary btn-small tt-bid-btn" data-bid="${b}">${b === 0 ? 'Nil' : b}</button>`;
+    }
+    ttBidControlsEl.innerHTML = html;
+  }
+  ttActionsEl.classList.toggle('hidden', !canPass && !canBid);
+
+  // Hand / game over
+  const over = gs.phase === 'hand_over' || gs.phase === 'game_over';
+  ttHandOverEl.classList.toggle('hidden', !over);
+  if (over && gs.handResults) {
+    let html = '<table class="tt-results-table"><tr>';
+    if (isHearts) {
+      html += '<th>Player</th><th>This hand</th><th>Total</th></tr>';
+      for (const r of gs.handResults) html += `<tr><td>${esc(r.name)}</td><td>+${r.points}</td><td>${r.total}</td></tr>`;
+    } else {
+      html += '<th>Team</th><th>Bid</th><th>Won</th><th>Points</th><th>Total</th></tr>';
+      for (const r of gs.handResults) {
+        html += `<tr><td>${esc(r.name)}${r.notes.length ? `<br><em>${esc(r.notes.join(', '))}</em>` : ''}</td>
+          <td>${r.bid}</td><td>${r.tricks}</td><td>${r.points >= 0 ? '+' : ''}${r.points}</td><td>${r.total}</td></tr>`;
+      }
+    }
+    html += '</table>';
+    ttResultsEl.innerHTML = html;
+  }
+  btnTtNext.textContent = gs.phase === 'game_over' ? 'New Game' : 'Next Hand';
+  ttOrganizerNextEl.classList.toggle('hidden', !over || !isOrganizer);
+  ttWaitingNextEl.classList.toggle('hidden', !over || isOrganizer);
+}
+
+ttHandEl.addEventListener('click', (e) => {
+  const cardEl = e.target.closest('.playing-card');
+  if (!cardEl || !ttLastState) return;
+  const card = ttLastState.myHand.find(c => cardKey(c) === cardEl.dataset.card);
+  if (!card) return;
+  const actions = ttLastState.myActions || [];
+
+  if (actions.includes('pass')) {
+    const i = ttPassSelection.findIndex(sel => cardKey(sel) === cardKey(card));
+    if (i !== -1) ttPassSelection.splice(i, 1);
+    else if (ttPassSelection.length < 3) ttPassSelection.push({ suit: card.suit, rank: card.rank });
+    renderTricks(ttLastState);
+  } else if (actions.includes('play') && card.playable) {
+    socket.emit('game_action', { action: 'play', data: { card: { suit: card.suit, rank: card.rank } } });
+  }
+});
+
+btnTtPass.addEventListener('click', () => {
+  if (ttPassSelection.length !== 3) return;
+  socket.emit('game_action', { action: 'pass', data: { cards: ttPassSelection } });
+  ttPassSelection = [];
+});
+
+ttBidControlsEl.addEventListener('click', (e) => {
+  const btn = e.target.closest('.tt-bid-btn');
+  if (!btn) return;
+  socket.emit('game_action', { action: 'bid', data: { bid: Number(btn.dataset.bid) } });
+});
+
+btnTtNext.addEventListener('click', () => socket.emit('next_round'));
+btnTtLobby.addEventListener('click', () => socket.emit('return_to_lobby'));
+
+// ============================================================
+// CRAZY EIGHTS RENDERING
+// ============================================================
+const viewCrazyEights = document.getElementById('view-crazyeights');
+const c8MessageEl = document.getElementById('c8-message');
+const c8PlayersEl = document.getElementById('c8-players');
+const c8DrawEl = document.getElementById('c8-draw');
+const c8DrawCountEl = document.getElementById('c8-draw-count');
+const c8DiscardEl = document.getElementById('c8-discard');
+const c8SuitEl = document.getElementById('c8-suit');
+const c8ActionsEl = document.getElementById('c8-actions');
+const btnC8Draw = document.getElementById('btn-c8-draw');
+const btnC8Pass = document.getElementById('btn-c8-pass');
+const c8SuitPickerEl = document.getElementById('c8-suit-picker');
+const btnC8Cancel = document.getElementById('btn-c8-cancel');
+const c8HandEl = document.getElementById('c8-hand');
+const c8RoundOverEl = document.getElementById('c8-round-over');
+const c8ResultsEl = document.getElementById('c8-results');
+const c8OrganizerNextEl = document.getElementById('c8-organizer-next');
+const c8WaitingNextEl = document.getElementById('c8-waiting-next');
+const btnC8Next = document.getElementById('btn-c8-next');
+const btnC8Lobby = document.getElementById('btn-c8-lobby');
+
+let c8PendingEight = null; // the 8 waiting for a suit choice
+let c8LastState = null;
+
+function renderCrazyEights(gs) {
+  c8LastState = gs;
+  const myActions = gs.myActions || [];
+  const myTurn = myActions.includes('play');
+  if (!myTurn) c8PendingEight = null;
+
+  c8MessageEl.textContent = gs.message || '';
+
+  c8PlayersEl.innerHTML = gs.players.map(p => `
+    <div class="c8-player${p.isCurrent ? ' is-current' : ''}${p.isMe ? ' is-me' : ''}">
+      <div class="tt-seat-name">${esc(p.name)}${p.isMe ? ' (You)' : ''}${p.isComputer ? ' 🤖' : ''}</div>
+      <div class="tt-seat-detail">${p.cardCount} card${p.cardCount === 1 ? '' : 's'} · ${p.score} pts</div>
+    </div>`).join('');
+
+  c8DrawEl.innerHTML = gs.drawCount > 0
+    ? `<div class="playing-card card-back${myActions.includes('draw') ? ' sol-card' : ''}" title="Draw a card"></div>`
+    : '<div class="card-placeholder"></div>';
+  c8DrawCountEl.textContent = `${gs.drawCount} left`;
+  c8DiscardEl.innerHTML = gs.topCard ? renderCard(gs.topCard) : '';
+  const red = gs.currentSuit === '♥' || gs.currentSuit === '♦';
+  c8SuitEl.innerHTML = `Suit: <span class="${red ? 'red-icon' : ''}">${gs.currentSuit || ''}</span>`;
+
+  c8HandEl.innerHTML = gs.myHand.map(c => {
+    let cls = 'hand-card';
+    if (myTurn) cls += c.playable ? ' is-playable' : ' is-disabled';
+    if (c8PendingEight && cardKey(c8PendingEight) === cardKey(c)) cls += ' is-raised';
+    return _handCardHtml(c, cls);
+  }).join('');
+
+  c8ActionsEl.classList.toggle('hidden', !myTurn || !!c8PendingEight);
+  btnC8Draw.classList.toggle('hidden', !myActions.includes('draw'));
+  btnC8Pass.classList.toggle('hidden', !myActions.includes('pass'));
+  c8SuitPickerEl.classList.toggle('hidden', !c8PendingEight);
+
+  const over = gs.phase === 'round_over';
+  c8RoundOverEl.classList.toggle('hidden', !over);
+  if (over && gs.roundResult) {
+    const rr = gs.roundResult;
+    let html = `<div class="showdown-won">${esc(rr.winner)} wins the round (+${rr.gained})</div>
+      <table class="tt-results-table"><tr><th>Player</th><th>Cards left</th><th>Points given</th><th>Total</th></tr>`;
+    rr.results.forEach((r, i) => {
+      html += `<tr><td>${esc(r.name)}</td><td>${r.cardsLeft}</td><td>${r.points}</td><td>${gs.players[i].score}</td></tr>`;
+    });
+    c8ResultsEl.innerHTML = html + '</table>';
+  }
+  c8OrganizerNextEl.classList.toggle('hidden', !over || !isOrganizer);
+  c8WaitingNextEl.classList.toggle('hidden', !over || isOrganizer);
+}
+
+c8HandEl.addEventListener('click', (e) => {
+  const cardEl = e.target.closest('.playing-card');
+  if (!cardEl || !c8LastState) return;
+  const card = c8LastState.myHand.find(c => cardKey(c) === cardEl.dataset.card);
+  if (!card || !card.playable) return;
+  if (card.rank === '8') {
+    c8PendingEight = { suit: card.suit, rank: card.rank };
+    renderCrazyEights(c8LastState);
+    return;
+  }
+  socket.emit('game_action', { action: 'play', data: { card: { suit: card.suit, rank: card.rank } } });
+});
+
+c8SuitPickerEl.addEventListener('click', (e) => {
+  const btn = e.target.closest('.c8-suit-btn');
+  if (!btn || !c8PendingEight) return;
+  socket.emit('game_action', { action: 'play', data: { card: c8PendingEight, suit: btn.dataset.suit } });
+  c8PendingEight = null;
+});
+
+btnC8Cancel.addEventListener('click', () => {
+  c8PendingEight = null;
+  if (c8LastState) renderCrazyEights(c8LastState);
+});
+
+c8DrawEl.addEventListener('click', () => {
+  if (c8LastState && (c8LastState.myActions || []).includes('draw')) {
+    socket.emit('game_action', { action: 'draw', data: {} });
+  }
+});
+btnC8Draw.addEventListener('click', () => socket.emit('game_action', { action: 'draw', data: {} }));
+btnC8Pass.addEventListener('click', () => socket.emit('game_action', { action: 'pass', data: {} }));
+btnC8Next.addEventListener('click', () => socket.emit('next_round'));
+btnC8Lobby.addEventListener('click', () => socket.emit('return_to_lobby'));
 
 // ============================================================
 // SOCKET EVENTS

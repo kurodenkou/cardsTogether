@@ -56,7 +56,23 @@
               <strong>FreeCell</strong>
               <p>1 player &bull; All cards face-up</p>
             </div>
+            <div class="game-option" data-game="hearts">
+              <div class="game-option-icon red-icon">&#9829;</div>
+              <strong>Hearts</strong>
+              <p>4 players &bull; Avoid hearts &amp; Q&#9824;</p>
+            </div>
+            <div class="game-option" data-game="spades">
+              <div class="game-option-icon">&#9824;</div>
+              <strong>Spades</strong>
+              <p>4 players &bull; Partners, bid &amp; make tricks</p>
+            </div>
+            <div class="game-option" data-game="crazyeights">
+              <div class="game-option-icon">8</div>
+              <strong>Crazy Eights</strong>
+              <p>2–8 players &bull; Match suit or rank</p>
+            </div>
           </div>
+          <div id="game-hint" class="hint hidden"></div>
           <div id="start-area" class="hidden">
             <button id="btn-start" class="btn btn-primary btn-large">Start Game</button>
           </div>
@@ -196,6 +212,92 @@
           <span id="fc-moves" class="fc-move-count">Moves: 0</span>
           <button id="btn-fc-new" class="btn btn-secondary">New Game</button>
           <button id="btn-fc-lobby" class="btn btn-secondary">Return to Lobby</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ====== HEARTS / SPADES VIEW ====== -->
+    <section id="view-tricks" class="view">
+      <div class="tt-table">
+        <div class="tt-message" id="tt-message"></div>
+        <div id="tt-scoreboard" class="tt-scoreboard"></div>
+
+        <div class="tt-board">
+          <div class="tt-seat tt-seat-top" id="tt-seat-2"></div>
+          <div class="tt-seat tt-seat-left" id="tt-seat-1"></div>
+          <div class="tt-center" id="tt-center">
+            <div class="tt-slot tt-slot-top" data-rel="2"></div>
+            <div class="tt-slot tt-slot-left" data-rel="1"></div>
+            <div class="tt-slot tt-slot-right" data-rel="3"></div>
+            <div class="tt-slot tt-slot-bottom" data-rel="0"></div>
+            <div class="tt-center-info" id="tt-center-info"></div>
+          </div>
+          <div class="tt-seat tt-seat-right" id="tt-seat-3"></div>
+          <div class="tt-seat tt-seat-bottom" id="tt-seat-0"></div>
+        </div>
+
+        <div id="tt-actions" class="action-bar hidden">
+          <div id="tt-pass-controls" class="hidden">
+            <button class="btn btn-primary" id="btn-tt-pass" disabled>Pass 3 Cards</button>
+          </div>
+          <div id="tt-bid-controls" class="tt-bid-controls hidden"></div>
+        </div>
+
+        <div id="tt-hand" class="hand-fan"></div>
+
+        <div id="tt-hand-over" class="round-over hidden">
+          <div id="tt-results"></div>
+          <div id="tt-organizer-next" class="hidden">
+            <button id="btn-tt-next" class="btn btn-primary">Next Hand</button>
+            <button id="btn-tt-lobby" class="btn btn-secondary">Return to Lobby</button>
+          </div>
+          <div id="tt-waiting-next" class="hidden hint">Waiting for organizer to continue…</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ====== CRAZY EIGHTS VIEW ====== -->
+    <section id="view-crazyeights" class="view">
+      <div class="c8-table">
+        <div class="c8-message" id="c8-message"></div>
+
+        <div id="c8-players" class="c8-players"></div>
+
+        <div class="c8-center">
+          <div class="c8-pile">
+            <div id="c8-draw" class="c8-draw"></div>
+            <div class="sol-pile-label c8-pile-label" id="c8-draw-count"></div>
+          </div>
+          <div class="c8-pile">
+            <div id="c8-discard"></div>
+          </div>
+          <div class="c8-suit" id="c8-suit"></div>
+        </div>
+
+        <div id="c8-actions" class="action-bar hidden">
+          <span class="hint" style="margin:0">Your turn — play a matching card</span>
+          <button class="btn btn-action" id="btn-c8-draw">Draw</button>
+          <button class="btn btn-secondary" id="btn-c8-pass">Pass</button>
+        </div>
+
+        <div id="c8-suit-picker" class="action-bar hidden">
+          <span>Choose a suit:</span>
+          <button class="btn btn-secondary c8-suit-btn" data-suit="♠">&#9824;</button>
+          <button class="btn btn-secondary c8-suit-btn red-icon" data-suit="♥">&#9829;</button>
+          <button class="btn btn-secondary c8-suit-btn red-icon" data-suit="♦">&#9830;</button>
+          <button class="btn btn-secondary c8-suit-btn" data-suit="♣">&#9827;</button>
+          <button class="btn btn-small btn-secondary" id="btn-c8-cancel">Cancel</button>
+        </div>
+
+        <div id="c8-hand" class="hand-fan"></div>
+
+        <div id="c8-round-over" class="round-over hidden">
+          <div id="c8-results"></div>
+          <div id="c8-organizer-next" class="hidden">
+            <button id="btn-c8-next" class="btn btn-primary">Next Round</button>
+            <button id="btn-c8-lobby" class="btn btn-secondary">Return to Lobby</button>
+          </div>
+          <div id="c8-waiting-next" class="hidden hint">Waiting for organizer to continue…</div>
         </div>
       </div>
     </section>
